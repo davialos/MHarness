@@ -1,0 +1,26 @@
+# Copy to the path printed by `mharness config-path`
+# (Linux/macOS: ~/.config/mharness/config.toml, Windows: %APPDATA%\mharness\config.toml)
+
+# Provider used when -p/--provider is not given.
+default = "claude"
+
+# Built-ins `claude`, `codex` and `gemini` exist without any config.
+# Define more here, or override a built-in by reusing its name.
+
+# Claude Code with a fixed model and auto-accepted edits.
+[providers.claude-edit]
+kind = "claude"
+program = "claude"
+args = ["--model", "opus", "--permission-mode", "acceptEdits"]
+
+# Any plain-text CLI. `{prompt}` is replaced by the prompt;
+# without it, the prompt is written to the program's stdin.
+[providers.ollama]
+kind = "text"
+program = "ollama"
+args = ["run", "llama3.2"]
+
+[providers.aider]
+kind = "text"
+program = "aider"
+args = ["--yes-always", "--no-pretty", "--message", "{prompt}"]

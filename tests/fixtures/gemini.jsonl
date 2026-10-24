@@ -1,0 +1,7 @@
+{"type":"init","timestamp":"2026-10-24T00:00:00.000Z","session_id":"gem-42","model":"gemini-2.5-pro"}
+{"type":"message","role":"user","content":"list files"}
+{"type":"tool_use","tool_name":"list_directory","tool_id":"t1","parameters":{"path":"."}}
+{"type":"tool_result","tool_id":"t1","status":"success","output":"README.md"}
+{"type":"message","role":"assistant","content":"Only ","delta":true}
+{"type":"message","role":"assistant","content":"README.md.","delta":true}
+{"type":"result","status":"success","stats":{"total_tokens":10,"duration_ms":1234}}

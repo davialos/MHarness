@@ -1,0 +1,33 @@
+{"type": "system", "subtype": "hook_started"}
+{"type": "system", "subtype": "hook_response"}
+{"type": "system", "subtype": "init", "session_id": "sess-123", "model": "claude-sonnet-5-5", "cwd": "/tmp"}
+{"type": "system", "subtype": "status"}
+{"type": "stream_event", "event": {"type": "message_start", "message": {"id": "msg_011CgMJCKQywMXiNFCfLX8ij"}}}
+{"type": "stream_event", "event": {"type": "content_block_start", "index": 0, "content_block": {"type": "tool_use", "id": "toolu_01LxYewY6Qb4WHh6hQ36szSR", "name": "Bash", "input": {}, "caller": {"type": "direct"}}}}
+{"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": ""}}}
+{"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": "{\"command\": \"echo hello"}}}
+{"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": "\", \"description\": \"Print"}}}
+{"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": " hello"}}}
+{"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "input_json_delta", "partial_json": "\"}"}}}
+{"type": "assistant", "message": {"id": "msg_011CgMJCKQywMXiNFCfLX8ij", "role": "assistant", "content": [{"type": "tool_use", "id": "toolu_01LxYewY6Qb4WHh6hQ36szSR", "name": "Bash", "input": {"command": "echo hello", "description": "Print hello"}, "caller": {"type": "direct"}}]}, "session_id": "sess-123"}
+{"type": "system", "subtype": "hook_started"}
+{"type": "stream_event", "event": {"type": "content_block_stop", "index": 0}}
+{"type": "stream_event", "event": {"type": "message_delta", "delta": {"stop_reason": "tool_use", "stop_sequence": null, "stop_details": null, "container": null}, "usage": {"input_tokens": 2, "cache_creation_input_tokens": 17898, "cache_read_input_tokens": 26487, "output_tokens": 74, "output_tokens_details": {"thinking_tokens": 0}, "iterations": [{"input_tokens": 2, "output_tokens": 74, "cache_read_input_tokens": 26487, "cache_creation_input_tokens": 17898, "cache_creation": {"ephemeral_5m_input_tokens": 0, "ephemeral_1h_input_tokens": 17898}, "type": "message"}]}, "context_management": {"applied_edits": []}}}
+{"type": "stream_event", "event": {"type": "message_stop"}}
+{"type": "system", "subtype": "task_summary"}
+{"type": "system", "subtype": "hook_response"}
+{"type": "system", "subtype": "hook_started"}
+{"type": "system", "subtype": "hook_response"}
+{"type": "user", "message": {"role": "user", "content": [{"tool_use_id": "toolu_01LxYewY6Qb4WHh6hQ36szSR", "type": "tool_result", "content": "hello", "is_error": false}]}, "session_id": "sess-123"}
+{"type": "system", "subtype": "status"}
+{"type": "stream_event", "event": {"type": "message_start", "message": {"id": "msg_011CgMJCUC5T3GA2cxcJP4ur"}}}
+{"type": "stream_event", "event": {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}}
+{"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "done"}}}
+{"type": "assistant", "message": {"id": "msg_011CgMJCUC5T3GA2cxcJP4ur", "role": "assistant", "content": [{"type": "text", "text": "done"}]}, "session_id": "sess-123"}
+{"type": "stream_event", "event": {"type": "content_block_stop", "index": 0}}
+{"type": "stream_event", "event": {"type": "message_delta", "delta": {"stop_reason": "end_turn", "stop_sequence": null, "stop_details": null, "container": null}, "usage": {"input_tokens": 2, "cache_creation_input_tokens": 2654, "cache_read_input_tokens": 44385, "output_tokens": 3, "output_tokens_details": {"thinking_tokens": 0}, "iterations": [{"input_tokens": 2, "output_tokens": 3, "cache_read_input_tokens": 44385, "cache_creation_input_tokens": 2654, "cache_creation": {"ephemeral_5m_input_tokens": 0, "ephemeral_1h_input_tokens": 2654}, "type": "message"}]}, "context_management": {"applied_edits": []}}}
+{"type": "stream_event", "event": {"type": "message_stop"}}
+{"type": "system", "subtype": "post_turn_summary"}
+{"type": "result", "subtype": "success", "is_error": false, "duration_ms": 4769, "result": "done", "session_id": "sess-123", "total_cost_usd": 0.0901999}
+{"type": "system", "subtype": "task_summary"}
+not json noise
