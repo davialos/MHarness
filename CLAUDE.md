@@ -7,5 +7,7 @@ Rust CLI + library that drives already-authenticated agent CLIs (claude, codex, 
 - `src/render.rs`: human/JSON/raw sinks. Answer on stdout, tool activity on stderr.
 - `src/config.rs`: optional TOML provider config. `src/which.rs`: PATH/PATHEXT lookup (Windows `.cmd` shims).
 
-Checks before pushing: `cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test`.
+- `board/`: `mharness-board` Slint desktop Kanban. `ui/board.slint` (UI), `engine.rs` (task threads, one mutex, UI polls a dirty flag every 150 ms), `git.rs` (worktrees/clone/push/PR via git, gh, glab CLIs), `store.rs` (board.json).
+
+Checks before pushing: `cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace`.
 New provider: add a `Kind`, a module with `invocation` + `Parser`, and a fixture test in `tests/parsers.rs`.

@@ -68,6 +68,39 @@ harness errors (e.g. the CLI isn't installed).
 {"type":"done","result":"There are two entries.","is_error":false,"cost_usd":0.012,"duration_ms":3558}
 ```
 
+## Board (desktop app)
+
+`mharness-board` is a Kanban desktop app (Rust + [Slint](https://slint.dev)) for running
+many agent tasks in parallel, each on its own branch.
+
+![MHarness Board](docs/board.png)
+
+- **Columns**: Backlog → Running → Review → Done, plus Failed. A finished run moves to
+  Review, an error or Stop moves to Failed. ◀ ▶ move a card by hand; ✓ marks it Done.
+- **Isolation per task**: every task gets a branch (`mh/<title>-<id>` unless you name one).
+  With *Isolated git worktree* on, the agent works in its own `git worktree`, so several tasks
+  on the same repo run at once without touching your checkout. Off means it switches the
+  repo's own checkout to that branch. Two running tasks can never share a directory.
+- **Local or remote repos**: a local path, any clone URL, or `github:owner/repo` /
+  `gitlab:group/repo`. Remotes are cloned once into the data dir and fetched before each run,
+  using your own git credentials (SSH keys, credential helper).
+- **Live log** of text, tool calls and errors; session id and cost; `git status` of the worktree.
+- **Follow-up**: send another instruction that continues the same agent session.
+- **Commit & push** (commits anything uncommitted with the task title), **Open PR/MR** through
+  your logged-in `gh` (GitHub) or `glab` (GitLab), **Folder**, **Remove worktree** (branch kept).
+- Tasks persist in `board.json` in the data dir (`~/.local/share/mharness`,
+  `~/Library/Application Support/mharness`, `%LOCALAPPDATA%\mharness`, or `$MHARNESS_DATA`).
+  Worktrees live under `<data>/worktrees/<repo>/<branch>`.
+
+```sh
+cargo install --git https://github.com/davialos/MHarness mharness-board
+cd ~/code/my-repo && mharness-board     # the current repo is pre-filled for new tasks
+```
+
+The board idles at about 20 MB RSS and stays near 25 MB while agents run (measured on Linux with
+the software renderer); each agent CLI it starts uses its own memory on top. Linux builds need
+`libfontconfig1-dev` and `libxkbcommon-dev`; running needs X11 or Wayland.
+
 ## Configuration
 
 Optional. `mharness config-path` prints where it's read from
@@ -110,9 +143,10 @@ follow their documented event formats and are covered by fixture tests.
 ## Development
 
 ```sh
-cargo test
-cargo clippy --all-targets -- -D warnings
-cargo build --release   # LTO + strip; target/release/mharness
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo build --release            # CLI only: target/release/mharness
+cargo build --release --workspace   # CLI + board
 ```
 
 CI runs fmt, clippy and tests on Ubuntu, macOS and Windows. Pushing a `v*` tag
@@ -120,4 +154,6 @@ publishes release binaries.
 
 ## License
 
-MIT
+MIT. The board's UI uses [Slint](https://slint.dev) under the Slint Royalty-free Desktop,
+Mobile and Web Applications License, which requires attributing Slint (this notice and the
+link above).

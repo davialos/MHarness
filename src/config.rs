@@ -54,13 +54,19 @@ impl Config {
         Ok(cfg)
     }
 
-    /// Built-ins first, then config entries (which may override a built-in by name).
+    /// Built-ins first (a config entry with the same name replaces one in place),
+    /// then the remaining config entries.
     pub fn providers(&self) -> Vec<Spec> {
         let mut all: Vec<Spec> = Spec::builtins()
             .into_iter()
-            .filter(|b| !self.providers.contains_key(&b.name))
+            .map(|b| self.providers.get(&b.name).cloned().unwrap_or(b))
             .collect();
-        all.extend(self.providers.values().cloned());
+        let extra = self
+            .providers
+            .values()
+            .filter(|p| !all.iter().any(|a| a.name == p.name));
+        let extra: Vec<Spec> = extra.cloned().collect();
+        all.extend(extra);
         all
     }
 
@@ -99,10 +105,8 @@ mod tests {
             cfg.resolve(Some("codex")).unwrap().program,
             "/opt/codex/bin/codex"
         );
-        assert_eq!(
-            cfg.providers().iter().filter(|s| s.name == "codex").count(),
-            1
-        );
+        let names: Vec<_> = cfg.providers().into_iter().map(|s| s.name).collect();
+        assert_eq!(names, ["claude", "codex", "gemini", "opus"]);
         assert!(cfg.resolve(Some("nope")).is_err());
     }
 

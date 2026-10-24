@@ -1,0 +1,422 @@
+import { Button, LineEdit, TextEdit, ComboBox, CheckBox, ListView } from "std-widgets.slint";
+
+export struct Card {
+    id: int,
+    title: string,
+    subtitle: string,
+    provider: string,
+    last: string,
+    status: int,
+    running: bool,
+}
+
+export struct Column {
+    name: string,
+    status: int,
+    cards: [Card],
+}
+
+export struct Detail {
+    has: bool,
+    id: int,
+    title: string,
+    prompt: string,
+    status: int,
+    status-label: string,
+    provider: string,
+    repo: string,
+    branch: string,
+    dir: string,
+    session: string,
+    cost: string,
+    review-url: string,
+    changes: string,
+    log: string,
+    running: bool,
+    worktree: bool,
+}
+
+export struct NewTask {
+    title: string,
+    prompt: string,
+    repo: string,
+    branch: string,
+    base: string,
+    provider: string,
+    model: string,
+    worktree: bool,
+    start: bool,
+}
+
+global Palette {
+    out property <color> bg: #0f1115;
+    out property <color> panel: #171a21;
+    out property <color> card: #1f2430;
+    out property <color> card-hover: #262c3a;
+    out property <color> border: #2c3342;
+    out property <color> text: #e6e9ef;
+    out property <color> muted: #8b93a7;
+    out property <color> accent: #6d8cff;
+
+    public pure function status-color(s: int) -> color {
+        s == 0 ? #7c8597 : s == 1 ? #4f8cff : s == 2 ? #e0a43b : s == 3 ? #3fb97a : #e5534b
+    }
+}
+
+component Pill inherits Rectangle {
+    in property <string> text;
+    in property <color> tint: Palette.muted;
+    height: 18px;
+    width: label.preferred-width + 12px;
+    border-radius: 9px;
+    background: tint.with-alpha(0.18);
+    label := Text {
+        text: root.text;
+        color: root.tint;
+        font-size: 11px;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+    }
+}
+
+component CardView inherits Rectangle {
+    in property <Card> card;
+    in property <bool> selected;
+    callback clicked();
+
+    border-radius: 8px;
+    background: touch.has-hover ? Palette.card-hover : Palette.card;
+    border-width: selected ? 1px : 0px;
+    border-color: Palette.accent;
+    height: layout.preferred-height;
+
+    Rectangle {
+        x: 0;
+        width: 3px;
+        height: parent.height;
+        border-radius: 2px;
+        background: Palette.status-color(card.status);
+    }
+
+    layout := VerticalLayout {
+        padding: 10px;
+        padding-left: 14px;
+        spacing: 5px;
+        Text {
+            text: card.title;
+            color: Palette.text;
+            font-weight: 600;
+            wrap: word-wrap;
+        }
+        Text {
+            text: card.subtitle;
+            color: Palette.muted;
+            font-size: 11px;
+            overflow: elide;
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
+            Pill { text: card.provider; tint: Palette.accent; }
+            if card.running: Pill { text: "● running"; tint: Palette.status-color(1); }
+        }
+        if card.last != "": Text {
+            text: card.last;
+            color: Palette.muted;
+            font-size: 11px;
+            overflow: elide;
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+component Field inherits HorizontalLayout {
+    in property <string> label;
+    in property <string> value;
+    spacing: 8px;
+    Text { text: label; color: Palette.muted; width: 70px; font-size: 12px; }
+    Text { text: value == "" ? "—" : value; color: Palette.text; font-size: 12px; wrap: word-wrap; }
+}
+
+component NewTaskDialog inherits Rectangle {
+    in property <[string]> providers;
+    in property <string> default-repo;
+    callback create(NewTask);
+    callback cancel();
+
+    background: #000000a0;
+    TouchArea { }  // swallow clicks behind the dialog
+
+    Rectangle {
+        width: min(640px, root.width - 40px);
+        height: min(form.preferred-height, root.height - 40px);
+        background: Palette.panel;
+        border-radius: 10px;
+        border-width: 1px;
+        border-color: Palette.border;
+
+        form := VerticalLayout {
+            padding: 20px;
+            spacing: 10px;
+            Text { text: "New agent task"; font-size: 18px; font-weight: 700; color: Palette.text; }
+            Text { text: "Title"; color: Palette.muted; font-size: 12px; }
+            title := LineEdit { placeholder-text: "Fix flaky login test"; }
+            Text { text: "Prompt"; color: Palette.muted; font-size: 12px; }
+            prompt := TextEdit { min-height: 110px; wrap: word-wrap; }
+            Text { text: "Repository: local path, clone URL, github:owner/repo or gitlab:group/repo"; color: Palette.muted; font-size: 12px; }
+            repo := LineEdit { text: root.default-repo; placeholder-text: "~/code/project"; }
+            HorizontalLayout {
+                spacing: 10px;
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Branch"; color: Palette.muted; font-size: 12px; }
+                    branch := LineEdit { placeholder-text: "auto: mh/<title>"; }
+                }
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Base"; color: Palette.muted; font-size: 12px; }
+                    base := LineEdit { placeholder-text: "current HEAD"; }
+                }
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Agent"; color: Palette.muted; font-size: 12px; }
+                    provider := ComboBox { model: root.providers; }
+                }
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Model (optional)"; color: Palette.muted; font-size: 12px; }
+                    model := LineEdit { placeholder-text: "provider default"; }
+                }
+            }
+            HorizontalLayout {
+                spacing: 16px;
+                worktree := CheckBox { text: "Isolated git worktree"; checked: true; }
+                start := CheckBox { text: "Start now"; checked: true; }
+            }
+            HorizontalLayout {
+                alignment: end;
+                spacing: 8px;
+                Button { text: "Cancel"; clicked => { root.cancel(); } }
+                Button {
+                    text: "Create";
+                    primary: true;
+                    enabled: title.text != "" && prompt.text != "" && repo.text != "";
+                    clicked => {
+                        root.create({
+                            title: title.text, prompt: prompt.text, repo: repo.text,
+                            branch: branch.text, base: base.text,
+                            provider: provider.current-value, model: model.text,
+                            worktree: worktree.checked, start: start.checked,
+                        });
+                        title.text = "";
+                        prompt.text = "";
+                        branch.text = "";
+                        base.text = "";
+                    }
+                }
+            }
+        }
+    }
+}
+
+component DetailPanel inherits Rectangle {
+    in property <Detail> detail;
+    callback close();
+    callback start(int);
+    callback stop(int);
+    callback follow-up(int, string);
+    callback move(int, int);
+    callback set-done(int);
+    callback push(int);
+    callback open-review(int);
+    callback open-folder(int);
+    callback remove-worktree(int);
+    callback delete(int);
+
+    background: Palette.panel;
+    border-width: 1px;
+    border-color: Palette.border;
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 10px;
+        HorizontalLayout {
+            spacing: 8px;
+            Text {
+                text: detail.title;
+                color: Palette.text;
+                font-size: 16px;
+                font-weight: 700;
+                wrap: word-wrap;
+                horizontal-stretch: 1;
+            }
+            Pill { text: detail.status-label; tint: Palette.status-color(detail.status); }
+            Button { text: "✕"; clicked => { root.close(); } }
+        }
+        Field { label: "Repo"; value: detail.repo; }
+        Field { label: "Branch"; value: detail.branch; }
+        Field { label: detail.worktree ? "Worktree" : "Checkout"; value: detail.dir; }
+        Field { label: "Agent"; value: detail.provider; }
+        Field { label: "Session"; value: detail.session; }
+        Field { label: "Cost"; value: detail.cost; }
+        if detail.review-url != "": Field { label: "PR / MR"; value: detail.review-url; }
+
+        HorizontalLayout {
+            spacing: 6px;
+            if !detail.running: Button { text: detail.session == "" ? "▶ Start" : "▶ Re-run"; primary: true; clicked => { root.start(detail.id); } }
+            if detail.running: Button { text: "■ Stop"; clicked => { root.stop(detail.id); } }
+            Button { text: "◀"; enabled: !detail.running; clicked => { root.move(detail.id, -1); } }
+            Button { text: "▶"; enabled: !detail.running; clicked => { root.move(detail.id, 1); } }
+            Button { text: "✓ Done"; enabled: !detail.running && detail.status != 3; clicked => { root.set-done(detail.id); } }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            Button { text: "Commit & push"; enabled: !detail.running && detail.dir != ""; clicked => { root.push(detail.id); } }
+            Button { text: "Open PR/MR"; enabled: !detail.running && detail.dir != ""; clicked => { root.open-review(detail.id); } }
+            Button { text: "Folder"; enabled: detail.dir != ""; clicked => { root.open-folder(detail.id); } }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            Button { text: "Remove worktree"; enabled: !detail.running && detail.worktree && detail.dir != ""; clicked => { root.remove-worktree(detail.id); } }
+            Button { text: "Delete task"; enabled: !detail.running; clicked => { root.delete(detail.id); } }
+        }
+
+        if detail.changes != "": Text {
+            text: detail.changes;
+            color: Palette.muted;
+            font-family: "monospace";
+            font-size: 11px;
+            wrap: word-wrap;
+        }
+
+        TextEdit {
+            text: detail.log;
+            read-only: true;
+            wrap: word-wrap;
+            font-size: 12px;
+            vertical-stretch: 1;
+        }
+
+        HorizontalLayout {
+            spacing: 6px;
+            reply := LineEdit {
+                placeholder-text: detail.session == "" ? "Run the task first to chat" : "Follow-up instruction (continues the session)";
+                enabled: !detail.running && detail.session != "";
+                accepted(text) => { root.follow-up(detail.id, text); self.text = ""; }
+            }
+            Button {
+                text: "Send";
+                enabled: !detail.running && detail.session != "" && reply.text != "";
+                clicked => { root.follow-up(detail.id, reply.text); reply.text = ""; }
+            }
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "MHarness Board";
+    preferred-width: 1360px;
+    preferred-height: 840px;
+    min-width: 1100px;
+    min-height: 560px;
+    background: Palette.bg;
+
+    in property <[Column]> columns;
+    in property <Detail> detail;
+    in property <[string]> providers;
+    in property <string> default-repo;
+    in property <string> status-text;
+    in-out property <bool> show-new;
+
+    callback select(int);
+    callback create(NewTask);
+    callback start(int);
+    callback stop(int);
+    callback follow-up(int, string);
+    callback move(int, int);
+    callback set-done(int);
+    callback push(int);
+    callback open-review(int);
+    callback open-folder(int);
+    callback remove-worktree(int);
+    callback delete(int);
+
+    VerticalLayout {
+        Rectangle {
+            height: 56px;
+            background: Palette.panel;
+            HorizontalLayout {
+                padding-left: 18px;
+                padding-right: 18px;
+                spacing: 12px;
+                Text { text: "MHarness Board"; color: Palette.text; font-size: 18px; font-weight: 700; vertical-alignment: center; }
+                Text { text: root.status-text; color: Palette.muted; font-size: 12px; vertical-alignment: center; horizontal-stretch: 1; overflow: elide; }
+                VerticalLayout {
+                    alignment: center;
+                    Button { text: "+ New task"; primary: true; clicked => { root.show-new = true; } }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 12px;
+
+            for col in root.columns: Rectangle {
+                horizontal-stretch: 1;
+                min-width: 110px;
+                background: Palette.panel;
+                border-radius: 10px;
+                VerticalLayout {
+                    padding: 10px;
+                    spacing: 8px;
+                    HorizontalLayout {
+                        spacing: 6px;
+                        Rectangle { width: 8px; height: 8px; y: (parent.height - 8px) / 2; border-radius: 4px; background: Palette.status-color(col.status); }
+                        Text { text: col.name; color: Palette.text; font-weight: 600; vertical-alignment: center; }
+                        Text { text: col.cards.length; color: Palette.muted; vertical-alignment: center; }
+                    }
+                    ListView {
+                        for card in col.cards: VerticalLayout {
+                            padding-bottom: 8px;
+                            CardView {
+                                card: card;
+                                selected: root.detail.has && root.detail.id == card.id;
+                                clicked => { root.select(card.id); }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if root.detail.has: DetailPanel {
+                width: 440px;
+                detail: root.detail;
+                close => { root.select(-1); }
+                start(id) => { root.start(id); }
+                stop(id) => { root.stop(id); }
+                follow-up(id, text) => { root.follow-up(id, text); }
+                move(id, d) => { root.move(id, d); }
+                set-done(id) => { root.set-done(id); }
+                push(id) => { root.push(id); }
+                open-review(id) => { root.open-review(id); }
+                open-folder(id) => { root.open-folder(id); }
+                remove-worktree(id) => { root.remove-worktree(id); }
+                delete(id) => { root.delete(id); }
+            }
+        }
+    }
+
+    if root.show-new: NewTaskDialog {
+        providers: root.providers;
+        default-repo: root.default-repo;
+        cancel => { root.show-new = false; }
+        create(t) => { root.create(t); root.show-new = false; }
+    }
+}

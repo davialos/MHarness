@@ -167,3 +167,36 @@ fn runner_reports_missing_program() {
     let err = runner::run(&spec, &Request::default(), None, &mut |_: &Event| {}).unwrap_err();
     assert!(err.to_string().contains("not found on PATH"));
 }
+
+#[test]
+fn cancel_kills_a_running_provider() {
+    let (program, args) = if cfg!(windows) {
+        ("ping", vec!["-n", "30", "127.0.0.1"])
+    } else {
+        ("sleep", vec!["30"])
+    };
+    let spec = Spec {
+        name: "slow".into(),
+        kind: Kind::Text,
+        program: program.into(),
+        args: args.into_iter().map(String::from).collect(),
+    };
+    let cancel = runner::Cancel::default();
+    let c2 = cancel.clone();
+    let stopper = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        c2.cancel();
+    });
+    let start = std::time::Instant::now();
+    let outcome = runner::run_cancellable(
+        &spec,
+        &Request::default(),
+        None,
+        &mut |_: &Event| {},
+        &cancel,
+    )
+    .unwrap();
+    stopper.join().unwrap();
+    assert!(outcome.cancelled && !outcome.success());
+    assert!(start.elapsed() < std::time::Duration::from_secs(10));
+}

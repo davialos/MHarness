@@ -13,8 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl, musl: true }
-          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-musl, musl: true }
+          - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu }
           - { os: macos-latest, target: aarch64-apple-darwin }
           - { os: macos-13, target: x86_64-apple-darwin }
           - { os: windows-latest, target: x86_64-pc-windows-msvc, exe: .exe }
@@ -25,15 +25,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - if: matrix.musl
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
-      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev libxkbcommon-dev
+      - run: cargo build --release --locked --workspace --target ${{ matrix.target }}
       - name: Package
         shell: bash
         run: |
           name=mharness-${{ github.ref_name }}-${{ matrix.target }}
           mkdir "$name"
-          cp target/${{ matrix.target }}/release/mharness${{ matrix.exe }} README.md LICENSE "$name"/
+          cp target/${{ matrix.target }}/release/mharness${{ matrix.exe }} target/${{ matrix.target }}/release/mharness-board${{ matrix.exe }} README.md LICENSE "$name"/
           if [ -n "${{ matrix.exe }}" ]; then 7z a "$name.zip" "$name" >/dev/null; else tar czf "$name.tar.gz" "$name"; fi
       - uses: softprops/action-gh-release@v2
         with:

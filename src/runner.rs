@@ -5,7 +5,8 @@
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
-use std::process::{Command, ExitStatus, Stdio};
+use std::process::{Child, Command, ExitStatus, Stdio};
+use std::sync::{Arc, Mutex, PoisonError};
 use std::thread;
 
 use anyhow::{Context, Result};
@@ -33,15 +34,54 @@ pub struct Outcome {
     pub status: ExitStatus,
     /// True if the provider reported an error result.
     pub is_error: bool,
+    /// True if the run was stopped through [`Cancel`].
+    pub cancelled: bool,
 }
 
 impl Outcome {
     pub fn success(&self) -> bool {
-        self.status.success() && !self.is_error
+        self.status.success() && !self.is_error && !self.cancelled
+    }
+}
+
+/// Stops a running turn from another thread by killing the provider process.
+#[derive(Clone, Default)]
+pub struct Cancel(Arc<Mutex<CancelState>>);
+
+#[derive(Default)]
+struct CancelState {
+    cancelled: bool,
+    child: Option<Child>,
+}
+
+impl Cancel {
+    pub fn cancel(&self) {
+        let mut s = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+        s.cancelled = true;
+        if let Some(child) = s.child.as_mut() {
+            let _ = child.kill();
+        }
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .cancelled
     }
 }
 
 pub fn run(spec: &Spec, req: &Request, cwd: Option<&Path>, sink: &mut dyn Sink) -> Result<Outcome> {
+    run_cancellable(spec, req, cwd, sink, &Cancel::default())
+}
+
+pub fn run_cancellable(
+    spec: &Spec,
+    req: &Request,
+    cwd: Option<&Path>,
+    sink: &mut dyn Sink,
+    cancel: &Cancel,
+) -> Result<Outcome> {
     let program = which::find(&spec.program).with_context(|| {
         format!(
             "`{}` not found on PATH (provider `{}`)",
@@ -91,6 +131,13 @@ pub fn run(spec: &Spec, req: &Request, cwd: Option<&Path>, sink: &mut dyn Sink) 
     };
 
     let stdout = child.stdout.take().expect("stdout is piped");
+    {
+        let mut state = cancel.0.lock().unwrap_or_else(PoisonError::into_inner);
+        if state.cancelled {
+            let _ = child.kill();
+        }
+        state.child = Some(child);
+    }
     let mut reader = BufReader::with_capacity(64 * 1024, stdout);
     let mut buf = Vec::with_capacity(4096);
     loop {
@@ -114,10 +161,18 @@ pub fn run(spec: &Spec, req: &Request, cwd: Option<&Path>, sink: &mut dyn Sink) 
     if let Some(w) = writer {
         let _ = w.join();
     }
+    let mut child = cancel
+        .0
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .child
+        .take()
+        .expect("child was stored above");
     let status = child.wait().context("waiting for provider")?;
     Ok(Outcome {
         session,
         status,
         is_error,
+        cancelled: cancel.is_cancelled(),
     })
 }

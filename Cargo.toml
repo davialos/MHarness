@@ -10,6 +10,9 @@ readme = "README.md"
 keywords = ["agent", "claude", "cli", "llm", "harness"]
 categories = ["command-line-utilities", "development-tools"]
 
+[workspace]
+members = ["board"]
+
 [[bin]]
 name = "mharness"
 path = "src/main.rs"

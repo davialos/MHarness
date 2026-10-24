@@ -1,0 +1,18 @@
+[package]
+name = "mharness-board"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Kanban desktop board for running MHarness agent tasks on branches and git worktrees"
+license = "MIT"
+repository = "https://github.com/davialos/MHarness"
+
+[dependencies]
+mharness = { path = ".." }
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+slint = { version = "1.18", default-features = false, features = ["std", "compat-1-2", "backend-winit", "renderer-software", "renderer-femtovg", "accessibility"] }
+
+[build-dependencies]
+slint-build = "1.18"
